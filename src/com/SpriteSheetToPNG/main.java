@@ -51,6 +51,12 @@ public class ConvertState {
         dialog.setMode(FileDialog.LOAD);
         dialog.setVisible(true);
 
+        // Ensure that we got a file
+        if (dialog.getFile() == null) {
+            System.out.println("You didn't select a file. Exiting program.");
+            System.exit(1);
+        }
+
 
         /*
          */
@@ -194,6 +200,13 @@ public class ConvertState {
                     x = Integer.parseInt(element.getAttribute("x")); // top left corner of the bounding box
                     y = Integer.parseInt(element.getAttribute("y"));
 
+                    // If element has rotated="true", then we need to swap the width and height
+                    if (element.getAttribute("rotated").equals("true")) {
+                        int tempWidth = frameWidth;
+                        frameWidth = frameHeight;
+                        frameHeight = tempWidth;
+                    }
+
 
 /*
                     System.out.println("frameWidth: " + frameWidth + " frameHeight:" + frameHeight);
@@ -247,6 +260,22 @@ public class ConvertState {
                         // the PNG file is currently a directory. we need an image
                         System.out.println("source pixels are (" + srcx1 + ", " + srcy1 + ") and (" + srcx2 + ", " + srcy2 + ")");
                         g2d.drawImage(img, dstx1, dsty1, dstx2, dsty2, srcx1, srcy1, srcx2, srcy2, null);
+
+                        // Rotate the output image if the XML file says it's rotated
+                        // The image is correct, but it is rotated 90 degrees clockwise
+                        if (element.getAttribute("rotated").equals("true")) {
+                            // Rotate the image 90 degrees counter-clockwise
+                            BufferedImage rotatedImage = new BufferedImage(frameHeight, frameWidth, BufferedImage.TYPE_INT_ARGB);
+                            Graphics2D rotatedG2d = rotatedImage.createGraphics();
+
+                            // Translate the image to the center of the frame to rotate around the center
+                            rotatedG2d.translate((frameHeight - frameWidth) / 2, (frameWidth - frameHeight) / 2);
+                            rotatedG2d.rotate(-Math.PI / 2, frameWidth / 2, frameHeight / 2);
+                            rotatedG2d.drawImage(image, 0, 0, null);
+                            rotatedG2d.dispose();
+
+                            image = rotatedImage;
+                        }
 
 
                         // folderin does not have a backslash appended to the back of it
